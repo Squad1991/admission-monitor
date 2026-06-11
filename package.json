@@ -1,0 +1,11 @@
+{
+  "name": "admission-monitor",
+  "version": "1.0.0",
+  "scripts": {
+    "check": "node monitor-once.js"
+  },
+  "dependencies": {
+    "playwright": "^1.49.1",
+    "nodemailer": "^6.9.16"
+  }
+}
