@@ -21,15 +21,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install Playwright browser
+      - name: Install Playwright Chromium
         run: npx playwright install chromium
 
       - name: Check admission page
         run: npm run check
         env:
-          CHECK_URL: ${{ secrets.CHECK_URL }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          EMAIL_USER: ${{ secrets.EMAIL_USER }}
-          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
-          ALERT_TO: ${{ secrets.ALERT_TO }}
+          CHECK_URL: https://akshara.ethdigitalcampus.com/OAWeb/form/jsp_admission/Enquiry.jsp
