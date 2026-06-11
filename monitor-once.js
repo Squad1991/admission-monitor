@@ -1,7 +1,9 @@
 const { chromium } = require("playwright");
-const nodemailer = require("nodemailer");
 
-const URL = process.env.CHECK_URL;
+const URL =
+  process.env.CHECK_URL ||
+  "https://akshara.ethdigitalcampus.com/OAWeb/form/jsp_admission/Enquiry.jsp";
+
 const KEYWORDS = [
   "nursery",
   "pre nursery",
@@ -10,49 +12,19 @@ const KEYWORDS = [
   "nur",
   "jr kg",
   "junior kg",
-  "lkg"
+  "lkg",
+  "lower kindergarten"
 ];
 
-async function sendTelegram(message) {
-  if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID) return;
-
-  await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: process.env.TELEGRAM_CHAT_ID,
-      text: message
-    })
-  });
-}
-
-async function sendEmail(message) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || !process.env.ALERT_TO) return;
-
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: process.env.ALERT_TO,
-    subject: "Nursery admission may be available",
-    text: message
-  });
-}
-
 async function main() {
-  if (!URL) throw new Error("CHECK_URL is missing");
-
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
   try {
-    await page.goto(URL, { waitUntil: "networkidle", timeout: 60000 });
+    await page.goto(URL, {
+      waitUntil: "networkidle",
+      timeout: 60000
+    });
 
     const bodyText = (await page.locator("body").innerText()).toLowerCase();
 
@@ -61,26 +33,31 @@ async function main() {
 
     const combinedText = `${bodyText} ${optionText}`;
 
-    const matchedKeyword = KEYWORDS.find(k => combinedText.includes(k));
+    const matchedKeyword = KEYWORDS.find(keyword =>
+      combinedText.includes(keyword)
+    );
 
     console.log("Checked at:", new Date().toISOString());
+    console.log("Page URL:", URL);
     console.log("Matched keyword:", matchedKeyword || "none");
 
     if (matchedKeyword) {
-      const message =
-        `🚨 Nursery-related admission option may be available!\n\n` +
-        `Matched: ${matchedKeyword}\n\n` +
-        `Open now:\n${URL}`;
+      console.log("🚨 Nursery-related admission option may be available!");
+      console.log(`Matched: ${matchedKeyword}`);
+      console.log(`Open now: ${URL}`);
 
-      await sendTelegram(message);
-      await sendEmail(message);
+      // This intentionally fails the GitHub Action
+      // so GitHub can notify you by email/app notification.
+      process.exit(1);
     }
+
+    console.log("No Nursery-related option found.");
   } finally {
     await browser.close();
   }
 }
 
-main().catch(err => {
-  console.error(err);
+main().catch(error => {
+  console.error("Monitor failed:", error);
   process.exit(1);
 });
